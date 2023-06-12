@@ -2,8 +2,7 @@ package ru.practicum.shareit.user.service;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exception.NotValidParameterException;
-import ru.practicum.shareit.user.UserMapper;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.model.User;
@@ -29,13 +28,6 @@ public class UserServiceImpl implements UserService {
     }
 
     public UserDto updateUser(UserDto dto, long id) {
-        if (dto.getName() != null && dto.getName().isBlank()) {
-            throw new NotValidParameterException("Имя не может быть пустым");
-        }
-        if (dto.getEmail() != null && dto.getEmail().isBlank()) {
-            throw new NotValidParameterException("Почтовый адрес не может быть пустым");
-        }
-
         User user = UserMapper.toUser(dto);
         return UserMapper.doUserDto(userDao.updateUser(user, id));
     }

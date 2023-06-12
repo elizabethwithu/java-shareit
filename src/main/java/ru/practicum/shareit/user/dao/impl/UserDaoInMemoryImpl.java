@@ -8,7 +8,6 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.dao.UserDao;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Repository
 @Slf4j
@@ -41,18 +40,17 @@ public class UserDaoInMemoryImpl implements UserDao {
         if (!Objects.equals(user.getEmail(), oldUser.getEmail())) {
             checkUserUniqueness(user);
         }
-        if (user.getName() == null) {
-            user.setName(oldUser.getName());
+        if (user.getName() != null && !user.getName().isBlank()) {
+            oldUser.setName(user.getName());
         }
-        if (user.getEmail() == null) {
-            user.setEmail(oldUser.getEmail());
+        if (user.getEmail() != null && !user.getEmail().isBlank()) {
+            oldUser.setEmail(user.getEmail());
         }
 
         users.remove(id);
-        user.setId(id);
-        users.put(id, user);
+        users.put(id, oldUser);
         log.info("Пользователь с айди успешно обновлен {}", id);
-        return user;
+        return oldUser;
     }
 
     @Override
@@ -70,9 +68,8 @@ public class UserDaoInMemoryImpl implements UserDao {
 
     private void checkUserUniqueness(User user) {
         String email = user.getEmail();
-
-        List<String> emails = users.values().stream().map(User::getEmail).collect(Collectors.toList());
-        if (emails.contains(email)) {
+        boolean match = users.values().stream().map(User::getEmail).anyMatch(mail -> Objects.equals(mail, email));
+        if (match) {
             throw new AlreadyExistException(user);
         }
     }
