@@ -58,4 +58,24 @@ public class ControllerExceptionHandler {
 
         return ResponseEntity.status(409).body(errors);
     }
+
+    @ExceptionHandler(NotAccessException.class)
+    public ResponseEntity<?> notAccessException(NotAccessException e) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("Объект не доступен для редактирования", e.getMessage());
+
+        log.error(e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
+
+        return ResponseEntity.status(404).body(errors);
+    }
+
+    @ExceptionHandler(UnsupportedStateException.class)
+    public ResponseEntity<?> unsupportedStateException(UnsupportedStateException e) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("error", e.getMessage());
+
+        log.error(e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
+
+        return ResponseEntity.status(500).body(errors);
+    }
 }
