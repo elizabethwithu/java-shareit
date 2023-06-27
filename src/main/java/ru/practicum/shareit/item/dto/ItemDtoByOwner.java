@@ -19,7 +19,7 @@ public class ItemDtoByOwner {
 
     private Boolean available;
 
-    private Long requestId;
+    private List<Long> requestId;
 
     private BookingDto lastBooking;
 

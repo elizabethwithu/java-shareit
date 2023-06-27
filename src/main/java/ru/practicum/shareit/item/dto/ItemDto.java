@@ -6,6 +6,7 @@ import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 @AllArgsConstructor
 @Getter
@@ -22,5 +23,5 @@ public class ItemDto {
     @NotNull(message = "Доступность вещи не указана.")
     private Boolean available;
 
-    private Long requestId;
+    private List<Long> requestId;
 }

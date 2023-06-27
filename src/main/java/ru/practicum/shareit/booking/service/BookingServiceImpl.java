@@ -62,9 +62,9 @@ public class BookingServiceImpl implements BookingService {
         checkUserAvailability(userDao, userId);
         Booking booking = bookingDao.findById(bookingId).orElseThrow(() ->
                 new NotFoundException("Бронирование с указанным айди не найдено."));
-        Item item = booking.getItem();
-        checkItemAvailability(itemDao, item.getId());
-        checkItemAccess(itemDao, userId, item.getId());
+        Long itemId = booking.getItem().getId();
+        checkItemAvailability(itemDao, itemId);
+        checkItemAccess(itemDao, userId, itemId);
 
         if (approved && booking.getStatus() == BookingStatus.APPROVED) {
             throw new NotValidParameterException("Бронирование уже подтверждено.");
