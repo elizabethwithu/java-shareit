@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.dto.UserDto;
@@ -11,8 +12,6 @@ import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 import java.util.stream.Collectors;
-
-import static ru.practicum.shareit.user.service.UserService.checkUserAvailability;
 
 @Service
 @Slf4j
@@ -32,16 +31,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public UserDto findUserById(long id) {
-        checkUserAvailability(userDao, id);
-        User user = userDao.getReferenceById(id);
+        User user = userDao.findById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден."));
         log.info("Найден пользователь с айди {}.", id);
         return UserMapper.doUserDto(user);
     }
 
     @Override
     public UserDto updateUser(UserDto dto, long id) {
-        checkUserAvailability(userDao, id);
-        User oldUser = userDao.getReferenceById(id);
+        User oldUser = userDao.findById(id).orElseThrow(() -> new NotFoundException("Пользователь не найден."));
 
         if (dto.getName() != null && !dto.getName().isBlank()) {
             oldUser.setName(dto.getName());

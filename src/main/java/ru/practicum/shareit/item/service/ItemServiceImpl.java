@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingStatus;
 import ru.practicum.shareit.booking.dao.BookingDao;
 import ru.practicum.shareit.booking.model.Booking;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.exception.NotValidParameterException;
 import ru.practicum.shareit.item.dao.CommentDao;
 import ru.practicum.shareit.item.dto.CommentDto;
@@ -17,15 +18,17 @@ import ru.practicum.shareit.item.dao.ItemDao;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Comment;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.dao.ItemRequestDao;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.model.User;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static ru.practicum.shareit.user.service.UserService.checkUserAvailability;
-import static ru.practicum.shareit.item.service.ItemService.checkItemAvailability;
 import static ru.practicum.shareit.item.service.ItemService.checkItemAccess;
 
 @RequiredArgsConstructor
@@ -37,26 +40,27 @@ public class ItemServiceImpl implements ItemService {
     private final UserDao userDao;
     private final BookingDao bookingDao;
     private final CommentDao commentDao;
+    private final ItemRequestDao itemRequestDao;
 
     @Override
     public ItemDto createItem(ItemDto dto, Long userId) {
-        checkUserAvailability(userDao, userId);
-        Item item = ItemMapper.toItem(dto);
-            item.setOwner(userDao.findById(userId).orElseThrow());
+        User user = userDao.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден."));
 
-            Item savedItem = itemDao.save(item);
-            log.info("Добавлена вещь {}", savedItem);
-            return ItemMapper.doItemDto(item);
+        Item item = ItemMapper.toItem(dto, doRequests(dto));
+        item.setOwner(user);
+
+        Item savedItem = itemDao.save(item);
+        log.info("Добавлена вещь {}", savedItem);
+        return ItemMapper.doItemDto(item);
     }
 
     @Override
     public ItemDto updateItem(ItemDto dto, long itemId, long userId) {
-        checkItemAvailability(itemDao, itemId);
-        checkUserAvailability(userDao, userId);
-        checkItemAccess(itemDao, userId, itemId);
+        User user = userDao.findById(userId).orElseThrow(() -> new NotFoundException("Пользователь не найден."));
 
-        Item oldItem = itemDao.getReferenceById(itemId);
-        Item item = ItemMapper.toItem(dto);
+        Item oldItem = itemDao.findById(itemId).orElseThrow(() -> new NotFoundException("Вещь не найдена."));
+
+        Item item = ItemMapper.toItem(dto, doRequests(dto));
         if (item.getName() == null) {
             item.setName(oldItem.getName());
         }
@@ -68,7 +72,7 @@ public class ItemServiceImpl implements ItemService {
         }
 
         item.setId(itemId);
-        item.setOwner(userDao.getReferenceById(userId));
+        item.setOwner(user);
 
         Item newItem = itemDao.save(item);
         log.info("Обновлена вещь {}", newItem);
@@ -78,27 +82,36 @@ public class ItemServiceImpl implements ItemService {
     @Override
     @Transactional(readOnly = true)
     public ItemDtoByOwner findItemById(long userId, long itemId) {
-        checkItemAvailability(itemDao, itemId);
-        checkUserAvailability(userDao, userId);
-        User user = userDao.getReferenceById(userId);
-        List<Booking> bookings = bookingDao.findByItemId(itemId);
+        Item item = itemDao.findById(itemId).orElseThrow(() -> new NotFoundException("Вещь не найдена."));
         List<Comment> comments = commentDao.findByItemId(itemId);
+
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> lastBookings = bookingDao.findByItemIdAndItemOwnerIdAndStartIsBeforeAndStatusIsNot(itemId, userId,
+                now, BookingStatus.REJECTED);
+        List<Booking> nextBookings = bookingDao.findByItemIdAndItemOwnerIdAndStartIsAfterAndStatusIsNot(itemId, userId,
+                now, BookingStatus.REJECTED);
+
         log.info("Найдена вещь с айди {}", itemId);
-        return ItemMapper.doItemDtoByOwner(itemDao.getReferenceById(itemId), user, bookings, comments);
+        return ItemMapper.doItemDtoByOwner(item, lastBookings, nextBookings, comments);
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<ItemDtoByOwner> findAll(long userId) {
-        User user = userDao.getReferenceById(userId);
         List<Item> userItems = itemDao.findItemsByOwnerId(userId);
-        List<Booking> bookings = bookingDao.findByItemOwnerIdOrderByStartDesc(userId);
         List<Comment> comments = commentDao.findByItemIdIn(userItems.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList()));
+        LocalDateTime now = LocalDateTime.now();
+
         log.info("Найден список вещей пользователя с айди {}", userId);
         return userItems.stream()
-                .map(item -> ItemMapper.doItemDtoByOwner(item, user, bookings, comments))
+                .map(item -> ItemMapper.doItemDtoByOwner(item,
+                        bookingDao.findByItemIdAndItemOwnerIdAndStartIsBeforeAndStatusIsNot(item.getId(), userId, now,
+                                BookingStatus.REJECTED),
+                        bookingDao.findByItemIdAndItemOwnerIdAndStartIsAfterAndStatusIsNot(item.getId(), userId, now,
+                                BookingStatus.REJECTED),
+                        comments))
                 .collect(Collectors.toList());
     }
 
@@ -117,12 +130,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public CommentDto addComment(CommentDto commentDto, long userId, long itemId) {
-        checkUserAvailability(userDao, userId);
-        checkItemAvailability(itemDao, itemId);
+        User user = userDao.findById(userId).orElseThrow(() -> new NotValidParameterException("Пользователь не найден."));
+        Item item = itemDao.findById(itemId).orElseThrow(() -> new NotValidParameterException("Вещь не опубликована."));
         Booking booking = bookingDao
                 .findTopByStatusNotLikeAndBookerIdAndItemIdOrderByEndAsc(BookingStatus.REJECTED, userId, itemId);
-        User user = userDao.getReferenceById(userId);
-        Item item = itemDao.getReferenceById(itemId);
         Comment comment = CommentMapper.toComment(commentDto, user, item);
 
         if (booking == null) {
@@ -137,9 +148,20 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     public void removeItemById(long userId, long itemId) {
-        checkItemAvailability(itemDao, itemId);
+        itemDao.findById(itemId).orElseThrow(() -> new NotFoundException("Вещь с не найдена."));
         checkItemAccess(itemDao, userId, itemId);
         itemDao.deleteById(itemId);
-        log.info("Удален пользователь с айди {}", userId);
+        log.info("Удалена вещь с айди {}", itemId);
+    }
+
+    private List<ItemRequest> doRequests(ItemDto dto) {
+        List<ItemRequest> requests = new ArrayList<>();
+        if (dto.getRequestId() != null) {
+            for (Long requestId: dto.getRequestId()) {
+                requests.add(itemRequestDao.findById(requestId)
+                        .orElseThrow(() -> new NotFoundException("Запрос не найден.")));
+            }
+        }
+        return requests;
     }
 }
