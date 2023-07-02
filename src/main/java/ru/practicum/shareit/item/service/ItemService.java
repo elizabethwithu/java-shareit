@@ -1,19 +1,42 @@
 package ru.practicum.shareit.item.service;
 
+import ru.practicum.shareit.exception.NotAccessException;
+import ru.practicum.shareit.exception.NotFoundException;
+import ru.practicum.shareit.item.dao.ItemDao;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.dto.ItemDtoByOwner;
+import ru.practicum.shareit.item.model.Item;
 
 import java.util.List;
+import java.util.Objects;
 
 public interface ItemService {
-    ItemDto createItem(ItemDto dto, long userId);
+    ItemDto createItem(ItemDto dto, Long userId);
 
     ItemDto updateItem(ItemDto dto, long itemId, long userId);
 
-    ItemDto findItemById(long itemId);
+    ItemDtoByOwner findItemById(long userId, long itemId);
 
-    List<ItemDto> findAll(long userId);
+    List<ItemDtoByOwner> findAll(long userId);
 
     List<ItemDto> findItemByDescription(String text);
 
     void removeItemById(long userId, long itemId);
+
+    CommentDto addComment(CommentDto commentDto, long userId, long itemId);
+
+    static void checkItemAvailability(ItemDao itemDao, long itemId) {
+        if (!itemDao.existsById(itemId)) {
+            throw new NotFoundException("Вещь с указанным айди не найдена.");
+        }
+    }
+
+    static void checkItemAccess(ItemDao itemDao, long userId, long itemId) {
+        Item item = itemDao.getReferenceById(itemId);
+        Long ownerId = item.getOwner().getId();
+        if (!Objects.equals(userId, ownerId)) {
+            throw new NotAccessException("Редактирование вещи доступно только владельцу.");
+        }
+    }
 }
