@@ -4,10 +4,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.exception.AlreadyExistException;
 import ru.practicum.shareit.exception.NotFoundException;
-import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
@@ -23,8 +24,15 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDto createUser(UserDto dto) {
         User user = UserMapper.toUser(dto);
-        User savedUser = userDao.save(user);
-        log.info("Создан пользователь {}.", savedUser);
+        User savedUser = new User();
+        try {
+            savedUser = userDao.save(user);
+            log.info("Создан пользователь {}.", savedUser);
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains("uq_user_email")) {
+                throw new AlreadyExistException(user.getEmail());
+            }
+        }
         return UserMapper.doUserDto(savedUser);
     }
 
@@ -66,5 +74,11 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
         log.info("Всё пользователи успешно получены.");
         return users;
+    }
+
+    public static void checkUserAvailability(UserDao dao, long id) {
+        if (!dao.existsById(id)) {
+            throw new NotFoundException("Пользователь с запрашиваемым айди не зарегистрирован.");
+        }
     }
 }

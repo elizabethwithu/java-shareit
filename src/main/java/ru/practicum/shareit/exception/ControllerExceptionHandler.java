@@ -7,6 +7,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import javax.validation.ConstraintViolationException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -56,7 +57,7 @@ public class ControllerExceptionHandler {
 
         log.error(e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
 
-        return ResponseEntity.status(409).body(errors);
+        return ResponseEntity.status(400).body(errors);
     }
 
     @ExceptionHandler(NotAccessException.class)
@@ -77,5 +78,15 @@ public class ControllerExceptionHandler {
         log.error(e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
 
         return ResponseEntity.status(500).body(errors);
+    }
+
+    @ExceptionHandler(ConstraintViolationException.class)
+    public ResponseEntity<?> constraintViolationException(ConstraintViolationException e) {
+        Map<String, String> errors = new HashMap<>();
+        errors.put("Некорректное значение", e.getMessage());
+
+        log.error(e.getStackTrace()[0].getMethodName() + ": " + e.getMessage());
+
+        return ResponseEntity.status(400).body(errors);
     }
 }

@@ -2,6 +2,8 @@ package ru.practicum.shareit.booking.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingStatus;
@@ -23,7 +25,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
-import static ru.practicum.shareit.user.service.UserService.checkUserAvailability;
+import static ru.practicum.shareit.user.service.UserServiceImpl.checkUserAvailability;
 import static ru.practicum.shareit.item.service.ItemService.checkItemAvailability;
 import static ru.practicum.shareit.item.service.ItemService.checkItemAccess;
 
@@ -98,65 +100,71 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingOutputDto> findAllUsersBooking(Long userId, String state) {
+    public List<BookingOutputDto> findAllUsersBooking(Long userId, String state, int from, int size) {
         checkUserAvailability(userDao, userId);
+        checkEnumExist(state);
         LocalDateTime start = LocalDateTime.now();
         List<Booking> bookings = new ArrayList<>();
-        checkEnumExist(state);
         State bookingStatus = State.valueOf(state.toUpperCase());
+
+        Sort sort = Sort.by(Sort.Direction.DESC, "start");
+        PageRequest page = PageRequest.of(from / size, size, sort);
 
         switch (bookingStatus) {
             case ALL:
-                bookings = bookingDao.findByBookerIdOrderByStartDesc(userId);
+                bookings = bookingDao.findByBookerIdOrderByStartDesc(userId, page);
                 break;
             case CURRENT:
-                bookings = bookingDao.findByBookerIdAndEndIsAfterAndStartIsBeforeOrderByStartDesc(userId, start, start);
+                bookings = bookingDao.findByBookerIdAndEndIsAfterAndStartIsBeforeOrderByStartDesc(userId, start, start, page);
                 break;
             case PAST:
-                bookings = bookingDao.findByBookerIdAndEndIsBeforeOrderByStartDesc(userId, start);
+                bookings = bookingDao.findByBookerIdAndEndIsBeforeOrderByStartDesc(userId, start, page);
                 break;
             case FUTURE:
-                bookings = bookingDao.findByBookerIdAndStartIsAfterOrderByStartDesc(userId, start);
+                bookings = bookingDao.findByBookerIdAndStartIsAfterOrderByStartDesc(userId, start, page);
                 break;
             case WAITING:
-                bookings = bookingDao.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+                bookings = bookingDao.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING, page);
                 break;
             case REJECTED:
-                bookings = bookingDao.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+                bookings = bookingDao.findByBookerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED, page);
                 break;
         }
         return BookingMapper.makeBookingsOutputList(bookings);
     }
 
     @Override
-    public List<BookingOutputDto> findAllBookingsForItems(Long userId, String state) {
+    public List<BookingOutputDto> findAllBookingsForItems(Long userId, String state, int from, int size) {
         checkUserAvailability(userDao, userId);
         if (itemDao.findItemsByOwnerId(userId).isEmpty()) {
             throw new NotFoundException("У пользователя нет вещей.");
         }
+        checkEnumExist(state);
+
+        Sort sort = Sort.by(Sort.Direction.DESC, "start");
+        PageRequest page = PageRequest.of(from / size, size, sort);
         LocalDateTime start = LocalDateTime.now();
         List<Booking> bookings = new ArrayList<>();
-        checkEnumExist(state);
         State bookingStatus = State.valueOf(state.toUpperCase());
 
         switch (bookingStatus) {
             case ALL:
-                bookings = bookingDao.findByItemOwnerIdOrderByStartDesc(userId);
+                bookings = bookingDao.findByItemOwnerIdOrderByStartDesc(userId, page);
                 break;
             case CURRENT:
-                bookings = bookingDao.findByItemOwnerIdAndEndIsAfterAndStartIsBeforeOrderByStartDesc(userId, start, start);
+                bookings = bookingDao.findByItemOwnerIdAndEndIsAfterAndStartIsBeforeOrderByStartDesc(userId, start, start, page);
                 break;
             case PAST:
-                bookings = bookingDao.findByItemOwnerIdAndEndIsBeforeOrderByStartDesc(userId, start);
+                bookings = bookingDao.findByItemOwnerIdAndEndIsBeforeOrderByStartDesc(userId, start, page);
                 break;
             case FUTURE:
-                bookings = bookingDao.findByItemOwnerIdAndStartIsAfterOrderByStartDesc(userId, start);
+                bookings = bookingDao.findByItemOwnerIdAndStartIsAfterOrderByStartDesc(userId, start, page);
                 break;
             case WAITING:
-                bookings = bookingDao.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING);
+                bookings = bookingDao.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.WAITING, page);
                 break;
             case REJECTED:
-                bookings = bookingDao.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED);
+                bookings = bookingDao.findByItemOwnerIdAndStatusOrderByStartDesc(userId, BookingStatus.REJECTED, page);
                 break;
         }
         return BookingMapper.makeBookingsOutputList(bookings);
