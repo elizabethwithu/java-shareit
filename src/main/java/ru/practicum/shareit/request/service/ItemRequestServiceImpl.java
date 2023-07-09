@@ -18,10 +18,13 @@ import ru.practicum.shareit.request.mapper.ItemRequestMapper;
 import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.model.User;
-import static ru.practicum.shareit.user.service.UserServiceImpl.checkUserAvailability;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import static ru.practicum.shareit.user.service.UserServiceImpl.checkUserAvailability;
 
 @RequiredArgsConstructor
 @Slf4j
@@ -71,19 +74,22 @@ public class ItemRequestServiceImpl implements ItemRequestService {
     }
 
     private List<ItemRequestDtoByOwner> findAndMap(List<ItemRequest> requests) {
-        List<Item> items;
-        List<ItemDto> reply = new ArrayList<>();
+        List<ItemDto> itemDtoList = new ArrayList<>();
         List<ItemRequestDtoByOwner> result = new ArrayList<>();
+        List<Long> requestIds = requests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        List<Item> items = itemDao.findByRequestIdIn(requestIds);
 
         for (ItemRequest itemRequest : requests) {
-            items = itemDao.findByRequestId(itemRequest.getId());
             for (Item item : items) {
-                reply.add(ItemMapper.doItemDto(item));
+                if (Objects.equals(itemRequest.getId(), item.getRequest().getId())) {
+                    itemDtoList.add(ItemMapper.doItemDto(item));
+                }
             }
-            result.add(ItemRequestMapper.doItemRequestDtoByOwner(itemRequest, reply));
+            result.add(ItemRequestMapper.doItemRequestDtoByOwner(itemRequest, itemDtoList));
         }
-
         return result;
     }
-
 }

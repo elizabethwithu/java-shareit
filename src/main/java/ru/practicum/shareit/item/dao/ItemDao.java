@@ -16,4 +16,6 @@ public interface ItemDao extends JpaRepository<Item, Long> {
                                                                                                Pageable page);
 
     List<Item> findByRequestId(Long requestId);
+
+    List<Item> findByRequestIdIn(List<Long> requestIds);
 }
