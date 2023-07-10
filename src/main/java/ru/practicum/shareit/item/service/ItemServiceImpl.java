@@ -2,6 +2,7 @@ package ru.practicum.shareit.item.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingStatus;
@@ -24,7 +25,6 @@ import ru.practicum.shareit.user.dao.UserDao;
 import ru.practicum.shareit.user.model.User;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -97,8 +97,10 @@ public class ItemServiceImpl implements ItemService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ItemDtoByOwner> findAll(long userId) {
-        List<Item> userItems = itemDao.findItemsByOwnerId(userId);
+    public List<ItemDtoByOwner> findAll(long userId, int from, int size) {
+        PageRequest page = PageRequest.of(from / size, size);
+
+        List<Item> userItems = itemDao.findItemsByOwnerId(userId, page);
         List<Comment> comments = commentDao.findByItemIdIn(userItems.stream()
                 .map(Item::getId)
                 .collect(Collectors.toList()));
@@ -108,21 +110,23 @@ public class ItemServiceImpl implements ItemService {
         return userItems.stream()
                 .map(item -> ItemMapper.doItemDtoByOwner(item,
                         bookingDao.findByItemIdAndItemOwnerIdAndStartIsBeforeAndStatusIsNot(item.getId(), userId, now,
-                                BookingStatus.REJECTED),
+                                BookingStatus.REJECTED, page),
                         bookingDao.findByItemIdAndItemOwnerIdAndStartIsAfterAndStatusIsNot(item.getId(), userId, now,
-                                BookingStatus.REJECTED),
+                                BookingStatus.REJECTED, page),
                         comments))
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<ItemDto> findItemByDescription(String text) {
+    public List<ItemDto> findItemByDescription(String text, int from, int size) {
         if (text.isBlank()) {
             return Collections.emptyList();
         }
+        PageRequest page = PageRequest.of(from / size, size);
+
         log.info("Найден список вещей по текстовому запросу {}", text);
-        return itemDao.findByAvailableTrueAndDescriptionContainingIgnoreCaseOrNameContainingIgnoreCase(text, text)
+        return itemDao.findByAvailableTrueAndDescriptionContainingIgnoreCaseOrNameContainingIgnoreCase(text, text, page)
                 .stream()
                 .map(ItemMapper::doItemDto)
                 .collect(Collectors.toList());
@@ -132,6 +136,7 @@ public class ItemServiceImpl implements ItemService {
     public CommentDto addComment(CommentDto commentDto, long userId, long itemId) {
         User user = userDao.findById(userId).orElseThrow(() -> new NotValidParameterException("Пользователь не найден."));
         Item item = itemDao.findById(itemId).orElseThrow(() -> new NotValidParameterException("Вещь не найдена."));
+
         Booking booking = bookingDao
                 .findTopByStatusNotLikeAndBookerIdAndItemIdOrderByEndAsc(BookingStatus.REJECTED, userId, itemId);
         Comment comment = CommentMapper.toComment(commentDto, user, item);
@@ -154,13 +159,13 @@ public class ItemServiceImpl implements ItemService {
         log.info("Удалена вещь с айди {}", itemId);
     }
 
-    private List<ItemRequest> doRequests(ItemDto dto) {
-        List<ItemRequest> requests = new ArrayList<>();
+    private ItemRequest doRequests(ItemDto dto) {
+        ItemRequest requests;
         if (dto.getRequestId() != null) {
-            for (Long requestId: dto.getRequestId()) {
-                requests.add(itemRequestDao.findById(requestId)
-                        .orElseThrow(() -> new NotFoundException("Запрос не найден.")));
-            }
+            requests = itemRequestDao.findById(dto.getRequestId())
+                    .orElseThrow(() -> new NotFoundException("Запрос не найден."));
+        } else {
+            requests = null;
         }
         return requests;
     }

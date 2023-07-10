@@ -1,16 +1,17 @@
 package ru.practicum.shareit.item.dto;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
-import java.util.List;
 
 @AllArgsConstructor
 @Getter
 @Setter
+@Builder
 public class ItemDto {
     private Long id;
 
@@ -23,5 +24,5 @@ public class ItemDto {
     @NotNull(message = "Доступность вещи не указана.")
     private Boolean available;
 
-    private List<Long> requestId;
+    private Long requestId;
 }
