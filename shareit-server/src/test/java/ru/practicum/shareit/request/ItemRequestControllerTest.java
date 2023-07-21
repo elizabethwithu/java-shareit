@@ -8,6 +8,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.constants.Request;
 import ru.practicum.shareit.request.controller.ItemRequestController;
 import ru.practicum.shareit.request.dto.ItemRequestDto;
 import ru.practicum.shareit.request.dto.ItemRequestDtoByOwner;
@@ -25,14 +26,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ItemRequestController.class)
 public class ItemRequestControllerTest {
-    @Autowired
-    ObjectMapper mapper;
+    private static final String URL = "http://localhost:8080/requests";
 
     @Autowired
-    MockMvc mockMvc;
+    private ObjectMapper mapper;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @MockBean
-    ItemRequestServiceImpl itemRequestService;
+    private ItemRequestServiceImpl itemRequestService;
 
     private final ItemRequestDto itemRequestDto = ItemRequestDto.builder()
             .id(1L)
@@ -47,8 +50,8 @@ public class ItemRequestControllerTest {
     void succeedCreateRequest() throws Exception {
         when(itemRequestService.createRequest(anyLong(), any())).thenReturn(itemRequestDto);
 
-        mockMvc.perform(post("/requests")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(post(URL)
+                        .header(Request.USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(itemRequestDto)))
                 .andExpectAll(
@@ -58,21 +61,12 @@ public class ItemRequestControllerTest {
         );
     }
 
-//    @Test
-//    void succeedFindAllWithDefaultParams() throws Exception {
-//        when(itemRequestService.findAll(anyLong(), anyInt(), anyInt())).thenReturn(List.of(itemRequestDtoByOwner));
-//
-//        mockMvc.perform(get("/requests/all")
-//                        .header("X-Sharer-User-Id", 1L))
-//                .andExpect(status().isOk());
-//    }
-
     @Test
     void succeedFindAllWithReplies() throws Exception {
         when(itemRequestService.findAllUsersRequestsWithReplies(anyLong())).thenReturn(List.of(itemRequestDtoByOwner));
 
-        mockMvc.perform(get("/requests")
-                        .header("X-Sharer-User-Id", 1L))
+        mockMvc.perform(get(URL)
+                        .header(Request.USER_ID, 1L))
                 .andExpect(status().isOk());
     }
 
@@ -80,8 +74,8 @@ public class ItemRequestControllerTest {
     void succeedFindById() throws Exception {
         when(itemRequestService.findByIdWithReplies(anyLong(), anyLong())).thenReturn(itemRequestDtoByOwner);
 
-        mockMvc.perform(get("/requests/1")
-                        .header("X-Sharer-User-Id", 1L))
+        mockMvc.perform(get(URL + "/1")
+                        .header(Request.USER_ID, 1L))
                 .andExpectAll(
                         status().isOk(),
                         jsonPath("$.id", Matchers.is(itemRequestDto.getId()), Long.class),

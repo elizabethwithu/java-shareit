@@ -7,22 +7,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import ru.practicum.shareit.constants.Request;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(controllers = BookingController.class)
 public class BookingControllerTest {
+    private static final String URL = "http://localhost:8080/bookings";
+
     @Autowired
     private MockMvc mockMvc;
 
     @MockBean
-    BookingClient client;
+    private BookingClient client;
 
     @Test
     void findAllBookingsForItemsFailByIncorrectFrom() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings/owner")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL + "/owner")
+                        .header(Request.USER_ID, 1)
                         .param("from", "-1")
                         .param("size", "1"))
                 .andExpectAll(status().isBadRequest(),
@@ -36,8 +39,8 @@ public class BookingControllerTest {
 
     @Test
     void findAllBookingsForItemsFailByIncorrectSize() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings/owner")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL + "/owner")
+                        .header(Request.USER_ID, 1)
                         .param("from", "1")
                         .param("size", "0"))
                 .andExpectAll(status().isBadRequest(),
@@ -51,8 +54,8 @@ public class BookingControllerTest {
 
     @Test
     void findAllUsersBookingFailByUnsupportedStatus() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL)
+                        .header(Request.USER_ID, 1)
                         .param("from", "3")
                         .param("state", "REJECTING")
                         .param("size", "3"))
@@ -67,8 +70,8 @@ public class BookingControllerTest {
 
     @Test
     void findAllBookingsForItemsFailByUnsupportedStatus() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings/owner")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL + "/owner")
+                        .header(Request.USER_ID, 1)
                         .param("from", "3")
                         .param("state", "REJECTING")
                         .param("size", "3"))
@@ -83,8 +86,8 @@ public class BookingControllerTest {
 
     @Test
     void findAllUsersBookingFailByIncorrectFrom() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL)
+                        .header(Request.USER_ID, 1)
                         .param("from", "-1")
                         .param("size", "1"))
                 .andExpectAll(status().isBadRequest(),
@@ -98,8 +101,8 @@ public class BookingControllerTest {
 
     @Test
     void findAllUsersBookingFailByIncorrectSize() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/bookings")
-                        .header("X-Sharer-User-Id", 1)
+        mockMvc.perform(get(URL)
+                        .header(Request.USER_ID, 1)
                         .param("from", "1")
                         .param("size", "0"))
                 .andExpectAll(status().isBadRequest(),

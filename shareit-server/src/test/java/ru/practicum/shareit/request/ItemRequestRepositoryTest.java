@@ -25,10 +25,10 @@ public class ItemRequestRepositoryTest {
     @Autowired
     private ItemRequestDao itemRequestDao;
 
-    User user;
-    ItemRequest itemRequest;
-    User user2;
-    ItemRequest itemRequest2;
+    private User user;
+    private ItemRequest itemRequest;
+    private User user2;
+    private ItemRequest itemRequest2;
 
     @BeforeEach
     void started() {

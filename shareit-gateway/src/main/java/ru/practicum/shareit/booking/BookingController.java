@@ -8,6 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingState;
+import ru.practicum.shareit.constants.Request;
 import ru.practicum.shareit.exception.NotValidParameterException;
 import ru.practicum.shareit.exception.UnsupportedStateException;
 
@@ -24,7 +25,7 @@ public class BookingController {
 	private final BookingClient bookingClient;
 
 	@GetMapping
-	public ResponseEntity<Object> getBookings(@RequestHeader("X-Sharer-User-Id") long userId,
+	public ResponseEntity<Object> getBookings(@RequestHeader(Request.USER_ID) long userId,
 			@RequestParam(name = "state", defaultValue = "all") String stateParam,
 			@RequestParam(defaultValue = "0", required = false) @Min(0) Integer from,
 			@RequestParam(defaultValue = "10", required = false) @Min(1) Integer size) {
@@ -34,7 +35,7 @@ public class BookingController {
 	}
 
 	@PostMapping
-	public ResponseEntity<Object> bookItem(@RequestHeader("X-Sharer-User-Id") long userId,
+	public ResponseEntity<Object> bookItem(@RequestHeader(Request.USER_ID) long userId,
 			@RequestBody @Valid BookingDto requestDto) {
 		LocalDateTime end = requestDto.getEnd();
 		LocalDateTime start = requestDto.getStart();
@@ -45,14 +46,14 @@ public class BookingController {
 	}
 
 	@GetMapping("/{bookingId}")
-	public ResponseEntity<Object> getBooking(@RequestHeader("X-Sharer-User-Id") long userId,
+	public ResponseEntity<Object> getBooking(@RequestHeader(Request.USER_ID) long userId,
 			@PathVariable Long bookingId) {
 		log.info("Get booking {}, userId={}", bookingId, userId);
 		return bookingClient.getBooking(userId, bookingId);
 	}
 
 	@GetMapping("/owner")
-	public ResponseEntity<Object> findAllBookingsForItems(@RequestHeader("X-Sharer-User-Id") Long userId,
+	public ResponseEntity<Object> findAllBookingsForItems(@RequestHeader(Request.USER_ID) Long userId,
 			@RequestParam(defaultValue = "ALL", required = false) String state,
 			@RequestParam(defaultValue = "0", required = false) @Min(0) int from,
 			@RequestParam(defaultValue = "10", required = false) @Min(1) int size) {
@@ -62,7 +63,7 @@ public class BookingController {
 	}
 
 	@PatchMapping("/{bookingId}")
-	public ResponseEntity<Object> confirmBookingByOwner(@RequestHeader("X-Sharer-User-Id") Long userId,
+	public ResponseEntity<Object> confirmBookingByOwner(@RequestHeader(Request.USER_ID) Long userId,
 												  @PathVariable Long bookingId, @RequestParam Boolean approved) {
 		return bookingClient.confirmBookingByOwner(userId, bookingId, approved);
 	}

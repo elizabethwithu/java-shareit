@@ -17,20 +17,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = UserController.class)
 public class UserControllerTest {
+    private static final String URL = "http://localhost:8080/users";
+
     @Autowired
     ObjectMapper mapper;
 
     @Autowired
-    MockMvc mockMvc;
+    private MockMvc mockMvc;
 
     @MockBean
-    UserClient client;
+    private UserClient client;
 
     private final UserDto userDto = new UserDto(1L, "Nick", "nick@mail.ru");
 
     @Test
     void createUserWithEmptyName() throws Exception {
-        mockMvc.perform(post("http://localhost:8080/users")
+        mockMvc.perform(post(URL)
                         .content("{" +
                                 "    \"email\": \"mail@mail.ru\"" +
                                 " }")
@@ -49,7 +51,7 @@ public class UserControllerTest {
 
     @Test
     void createUserWithEmptyEmail() throws Exception {
-        mockMvc.perform(post("http://localhost:8080/users")
+        mockMvc.perform(post(URL)
                         .content("{" +
                                 "    \"name\": \"Nick\"" +
                                 " }")
@@ -70,7 +72,7 @@ public class UserControllerTest {
     void createUserWithFailEmail() throws Exception {
         userDto.setEmail("nick.mail.ru");
 
-        mockMvc.perform(post("http://localhost:8080/users")
+        mockMvc.perform(post(URL)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(userDto)))
                 .andExpectAll(

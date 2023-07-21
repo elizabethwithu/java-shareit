@@ -7,6 +7,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
+import ru.practicum.shareit.constants.Request;
 
 import java.nio.charset.StandardCharsets;
 
@@ -16,16 +17,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ItemRequestController.class)
 public class ItemRequestControllerTest {
+    private static final String URL = "http://localhost:8080/requests";
+
     @Autowired
-    MockMvc mockMvc;
+    private MockMvc mockMvc;
 
     @MockBean
-    ItemRequestClient client;
+    private ItemRequestClient client;
 
     @Test
     void createRequestWithoutDescription() throws Exception {
-        mockMvc.perform(post("/requests")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(post(URL)
+                        .header(Request.USER_ID, 1L)
                         .content("{" +
                                 " }")
                         .characterEncoding(StandardCharsets.UTF_8)
@@ -43,8 +46,8 @@ public class ItemRequestControllerTest {
 
     @Test
     void succeedFindAllWithWrongParams() throws Exception {
-        mockMvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(get(URL + "/all")
+                        .header(Request.USER_ID, 1L)
                         .param("from", "-1")
                         .param("size", "1"))
                 .andExpectAll(
@@ -56,8 +59,8 @@ public class ItemRequestControllerTest {
                                         "   }")
                 );
 
-        mockMvc.perform(get("/requests/all")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(get(URL + "/all")
+                        .header(Request.USER_ID, 1L)
                         .param("from", "5")
                         .param("size", "0"))
                 .andExpectAll(

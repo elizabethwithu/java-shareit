@@ -38,19 +38,19 @@ import static org.mockito.Mockito.*;
 public class ItemServiceTest {
     private static final LocalDateTime NOW = LocalDateTime.now();
     @Mock
-    ItemDao repository;
+    private ItemDao repository;
 
     @Mock
-    UserDao userRepository;
+    private UserDao userRepository;
 
     @Mock
-    BookingDao bookingRepository;
+    private BookingDao bookingRepository;
 
     @Mock
-    CommentDao commentRepository;
+    private CommentDao commentRepository;
 
     @InjectMocks
-    ItemServiceImpl service;
+    private ItemServiceImpl service;
 
     private User owner;
     private User booker;

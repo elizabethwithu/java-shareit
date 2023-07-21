@@ -26,11 +26,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = UserController.class)
 public class UserControllerTest {
-    @Autowired
-    ObjectMapper mapper;
+    private static final String URL = "http://localhost:8080/users";
 
     @Autowired
-    MockMvc mockMvc;
+    private ObjectMapper mapper;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @MockBean
     private UserServiceImpl userService;
@@ -46,7 +48,7 @@ public class UserControllerTest {
     void succeedCreateUser() throws Exception {
         when(userService.createUser(any())).thenReturn(userDto);
 
-        mockMvc.perform(post("http://localhost:8080/users")
+        mockMvc.perform(post(URL)
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(userDto)))
                 .andExpectAll(
@@ -61,7 +63,7 @@ public class UserControllerTest {
     void succeedUpdateUserNameAndEmail() throws Exception {
         when(userService.updateUser(any(), anyLong())).thenReturn(userDto);
 
-        mockMvc.perform(patch("http://localhost:8080/users/1")
+        mockMvc.perform(patch(URL + "/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(userDto)))
                 .andExpectAll(
@@ -76,7 +78,7 @@ public class UserControllerTest {
     void succeedUpdateUsersName() throws Exception {
         when(userService.updateUser(any(), anyLong())).thenReturn(userDto);
 
-        mockMvc.perform(patch("http://localhost:8080/users/1")
+        mockMvc.perform(patch(URL + "/1")
                         .content("{" +
                                 "    \"name\": \"Nick\"" +
                                 " }")
@@ -95,7 +97,7 @@ public class UserControllerTest {
     void succeedUpdateUsersEmail() throws Exception {
         when(userService.updateUser(any(), anyLong())).thenReturn(userDto);
 
-        mockMvc.perform(patch("http://localhost:8080/users/1")
+        mockMvc.perform(patch(URL + "/1")
                         .content("{" +
                                 "    \"email\": \"nick@mail.ru\"" +
                                 " }")
@@ -114,7 +116,7 @@ public class UserControllerTest {
     void succeedFindById() throws Exception {
         when(userService.findUserById(anyLong())).thenReturn(userDto);
 
-        mockMvc.perform(get("http://localhost:8080/users/1"))
+        mockMvc.perform(get(URL + "/1"))
                 .andExpectAll(
                         status().isOk(),
                         jsonPath("$.id", Matchers.is(userDto.getId()), Long.class),
@@ -125,7 +127,7 @@ public class UserControllerTest {
 
     @Test
     void succeedDeleteUser() throws Exception {
-        mockMvc.perform(delete("http://localhost:8080/users/1"))
+        mockMvc.perform(delete(URL + "/1"))
                 .andExpect(status().isOk());
         verify(userService, times(1))
                 .removeUserById(anyLong());
@@ -135,7 +137,7 @@ public class UserControllerTest {
     void findAllWithUsers() throws Exception {
         when(userService.findAll()).thenReturn(List.of(userDto));
 
-        mockMvc.perform(get("http://localhost:8080/users"))
+        mockMvc.perform(get(URL))
                 .andExpectAll(
                         status().isOk(),
                         jsonPath("$[0].id", Matchers.is(userDto.getId()), Long.class),
@@ -146,7 +148,7 @@ public class UserControllerTest {
 
     @Test
     void findAllWhenUsersListIsEmpty() throws Exception {
-        mockMvc.perform(get("http://localhost:8080/users"))
+        mockMvc.perform(get(URL))
                 .andExpectAll(
                         status().isOk(),
                         MockMvcResultMatchers.content().contentType(MediaType.APPLICATION_JSON),

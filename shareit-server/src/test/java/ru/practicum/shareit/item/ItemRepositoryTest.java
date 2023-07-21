@@ -31,7 +31,6 @@ public class ItemRepositoryTest {
     private ItemRequest itemRequest;
     private Item item1;
     private Item item2;
-    private Item item3;
 
     @BeforeEach
     void started() {
@@ -50,7 +49,7 @@ public class ItemRepositoryTest {
                 .owner(user).available(true).request(itemRequest).build();
         em.persist(item2);
 
-        item3 = Item.builder().name("chair").description("red")
+        Item item3 = Item.builder().name("chair").description("red")
                 .owner(user).available(false).build();
         em.persist(item3);
     }

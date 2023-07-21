@@ -14,6 +14,7 @@ import ru.practicum.shareit.booking.controller.BookingController;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingOutputDto;
 import ru.practicum.shareit.booking.service.BookingServiceImpl;
+import ru.practicum.shareit.constants.Request;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.user.dto.UserDto;
 
@@ -28,11 +29,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = BookingController.class)
 public class BookingControllerTest {
-    @Autowired
-    ObjectMapper mapper;
+    private static final String URL = "http://localhost:8080/bookings";
 
     @Autowired
-    MockMvc mockMvc;
+    private ObjectMapper mapper;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @MockBean
     private BookingServiceImpl bookingService;
@@ -80,8 +83,8 @@ public class BookingControllerTest {
     void succeedCreateBooking() throws Exception {
         when(bookingService.createBooking(any(), anyLong())).thenReturn(bookingOutputDto);
 
-        mockMvc.perform(post("http://localhost:8080/bookings")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(post(URL)
+                        .header(Request.USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(bookingDto)))
                 .andExpectAll(
@@ -97,8 +100,8 @@ public class BookingControllerTest {
         bookingOutputDto.setStatus(BookingStatus.APPROVED);
         when(bookingService.confirmBookingByOwner(anyLong(), anyLong(), anyBoolean())).thenReturn(bookingOutputDto);
 
-        mockMvc.perform(patch("http://localhost:8080/bookings/2")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(patch(URL + "/2")
+                        .header(Request.USER_ID, 1L)
                         .param("approved", String.valueOf(true)))
                 .andExpectAll(
                         status().isOk(),
@@ -110,8 +113,8 @@ public class BookingControllerTest {
         bookingOutputDto.setStatus(BookingStatus.REJECTED);
         when(bookingService.confirmBookingByOwner(anyLong(), anyLong(), anyBoolean())).thenReturn(bookingOutputDto);
 
-        mockMvc.perform(patch("http://localhost:8080/bookings/2")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(patch(URL + "/2")
+                        .header(Request.USER_ID, 1L)
                         .param("approved", String.valueOf(false)))
                 .andExpectAll(
                         status().isOk(),
@@ -125,8 +128,8 @@ public class BookingControllerTest {
     void succeedFindBookingById() throws Exception {
         when(bookingService.findBookingById(anyLong(), anyLong())).thenReturn(bookingOutputDto);
 
-        mockMvc.perform(get("http://localhost:8080/bookings/2")
-                        .header("X-Sharer-User-Id", 1L))
+        mockMvc.perform(get(URL + "/2")
+                        .header(Request.USER_ID, 1L))
                 .andExpectAll(
                         status().isOk(),
                         jsonPath("$.id", Matchers.is(bookingOutputDto.getId()), Long.class),
@@ -141,8 +144,8 @@ public class BookingControllerTest {
         when(bookingService.findAllUsersBooking(anyLong(), any(), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("http://localhost:8080/bookings")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(get(URL)
+                        .header(Request.USER_ID, 1L)
                         .param("state", "rejected")
                         .param("from", "3")
                         .param("size", "3"))
@@ -159,8 +162,8 @@ public class BookingControllerTest {
         when(bookingService.findAllBookingsForItems(anyLong(), any(), anyInt(), anyInt()))
                 .thenReturn(Collections.emptyList());
 
-        mockMvc.perform(get("http://localhost:8080/bookings/owner")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(get(URL + "/owner")
+                        .header(Request.USER_ID, 1L)
                         .param("state", "rejected")
                         .param("from", "3")
                         .param("size", "3"))

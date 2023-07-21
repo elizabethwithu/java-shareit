@@ -10,6 +10,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import ru.practicum.shareit.booking.dto.BookingDto;
+import ru.practicum.shareit.constants.Request;
 import ru.practicum.shareit.item.controller.ItemController;
 import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
@@ -28,14 +29,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(controllers = ItemController.class)
 public class ItemControllerTest {
-    @Autowired
-    ObjectMapper mapper;
+    private static final String URL = "http://localhost:8080/items";
 
     @Autowired
-    MockMvc mockMvc;
+    private ObjectMapper mapper;
+
+    @Autowired
+    private MockMvc mockMvc;
 
     @MockBean
-    ItemServiceImpl itemService;
+    private ItemServiceImpl itemService;
 
     private final ItemDto itemDto = ItemDto.builder()
             .id(1L)
@@ -69,8 +72,8 @@ public class ItemControllerTest {
     void succeedCreateItem() throws Exception {
         when(itemService.createItem(any(), anyLong())).thenReturn(itemDto);
 
-        mockMvc.perform(post("http://localhost:8080/items")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(post(URL)
+                        .header(Request.USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(itemDto)))
                 .andExpectAll(
@@ -86,8 +89,8 @@ public class ItemControllerTest {
     void succeedUpdateItem() throws Exception {
         when(itemService.updateItem(any(), anyLong(), anyLong())).thenReturn(itemDto);
 
-        mockMvc.perform(patch("http://localhost:8080/items/1")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(patch(URL + "/1")
+                        .header(Request.USER_ID, 1L)
                         .content("{" +
                                 "    \"name\": \"table\"," +
                                 "    \"description\": \"black\"" +
@@ -108,8 +111,8 @@ public class ItemControllerTest {
     void succeedFindByIdItem() throws Exception {
         when(itemService.findItemById(anyLong(), anyLong())).thenReturn(itemDtoByOwner);
 
-        mockMvc.perform(get("http://localhost:8080/items/2")
-                        .header("X-Sharer-User-Id", 1L))
+        mockMvc.perform(get(URL + "/2")
+                        .header(Request.USER_ID, 1L))
                 .andExpectAll(
                         status().isOk(),
                         jsonPath("$.id", Matchers.is(itemDtoByOwner.getId()), Long.class),
@@ -123,7 +126,7 @@ public class ItemControllerTest {
     void findByIdItemWithoutSharerUserId() throws Exception {
         when(itemService.findItemById(anyLong(), anyLong())).thenReturn(itemDtoByOwner);
 
-        mockMvc.perform(get("http://localhost:8080/items/2"))
+        mockMvc.perform(get(URL + "/2"))
                 .andExpect(
                         status().isBadRequest());
     }
@@ -132,8 +135,8 @@ public class ItemControllerTest {
     void succeedAddComment() throws Exception {
         when(itemService.addComment(any(), anyInt(), anyInt())).thenReturn(commentDto);
 
-        mockMvc.perform(post("http://localhost:8080/items/1/comment")
-                        .header("X-Sharer-User-Id", 1L)
+        mockMvc.perform(post(URL + "/1/comment")
+                        .header(Request.USER_ID, 1L)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(commentDto)))
                 .andExpect(status().isOk());
@@ -143,7 +146,7 @@ public class ItemControllerTest {
     void addCommentWithoutSharerUserId() throws Exception {
         when(itemService.addComment(any(), anyInt(), anyInt())).thenReturn(commentDto);
 
-        mockMvc.perform(post("http://localhost:8080/items/1/comment")
+        mockMvc.perform(post(URL + "/1/comment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(mapper.writeValueAsString(commentDto)))
                 .andExpect(
@@ -153,8 +156,8 @@ public class ItemControllerTest {
 
     @Test
     void succeedDeleteItemById() throws Exception {
-        mockMvc.perform(delete("http://localhost:8080/items/2")
-                        .header("X-Sharer-User-Id", 1L))
+        mockMvc.perform(delete(URL + "/2")
+                        .header(Request.USER_ID, 1L))
                 .andExpect(status().isOk());
 
         verify(itemService, times(1))
@@ -163,7 +166,7 @@ public class ItemControllerTest {
 
     @Test
     void deleteItemByIdWithoutSharerUserId() throws Exception {
-        mockMvc.perform(delete("http://localhost:8080/items/2"))
+        mockMvc.perform(delete(URL + "/2"))
                 .andExpect(status().isBadRequest());
 
         verify(itemService, times(0))

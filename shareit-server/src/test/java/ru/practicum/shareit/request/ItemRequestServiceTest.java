@@ -42,7 +42,7 @@ public class ItemRequestServiceTest {
     private ItemDao itemRepository;
 
     @InjectMocks
-    ItemRequestServiceImpl service;
+    private ItemRequestServiceImpl service;
 
     private User requester;
     private Item item;
