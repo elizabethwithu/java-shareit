@@ -9,4 +9,5 @@ ShareIt – микросервисное приложение, которое о
 Каждый сервис  доступен в виде докер-образа, который можно загрузить с dockerHub. Для запуска приложения предлагается использовать файл docker-compose.yml. 
 
 В проекте используется реляционная база данных PosgreSQL. Структура базы данных представлена на ER-диаграмме:
+
 <img width="665" alt="shareItDatabase" src="https://github.com/elizabethwithu/java-filmorate/assets/117889272/0e912a0f-d91b-4bee-bfe6-3faeccb5e420">
